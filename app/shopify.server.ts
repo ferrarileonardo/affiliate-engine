@@ -4,10 +4,14 @@ import {
   ApiVersion,
   AppDistribution,
   shopifyApp,
+  BillingInterval,
 } from "@shopify/shopify-app-react-router/server";
 
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+
+// Billing plan name — must match the key used in billing.check / billing.request
+export const AFFILIATE_PLAN = "Affiliate Commission Plan";
 
 // 🔐 Validaciones (opcional pero recomendado)
 if (!process.env.SHOPIFY_APP_URL) {
@@ -22,7 +26,6 @@ const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET,
 
-  // ✅ Usa una versión estable (evita October25 por ahora)
   apiVersion: ApiVersion.January25,
 
   scopes: process.env.SCOPES?.split(",") || [],
@@ -37,6 +40,24 @@ const shopify = shopifyApp({
 
   future: {
     expiringOfflineAccessTokens: true,
+  },
+
+  // ─── Usage-based billing ─────────────────────────────────────────────────
+  // Capped at $100 USD/month. Each conversion triggers a UsageRecord
+  // via appUsageRecordCreate (5% of the referred sale total).
+  billing: {
+    [AFFILIATE_PLAN]: {
+      lineItems: [
+        {
+          amount: 100,
+          currencyCode: "USD",
+          interval: BillingInterval.Usage,
+          terms:
+            "5% service fee on each referred sale. Capped at $100 USD/month.",
+        },
+      ],
+      trialDays: 0,
+    },
   },
 
   ...(process.env.SHOP_CUSTOM_DOMAIN
