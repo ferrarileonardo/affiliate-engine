@@ -110,11 +110,41 @@ model Conversion {
   // tracking helper
   refCode             String?
 
+  // billing — Shopify AppUsageRecord ID (null = pending or failed)
+  billingChargeId     String?
+
   createdAt           DateTime @default(now())
 
   @@index([affiliateId])
   @@index([orderId])
   @@index([refCode])
+}
+
+//
+// =========================
+// 💳 APP BILLING
+// =========================
+//
+
+model AppBilling {
+  id                     String   @id @default(cuid())
+
+  // one record per shop
+  shop                   String   @unique
+
+  // Shopify GIDs
+  subscriptionId         String
+  subscriptionLineItemId String
+
+  // ACTIVE | CANCELLED | EXPIRED
+  status                 String   @default("ACTIVE")
+
+  cappedAmount           Float    @default(100)
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([shop])
 }
 
 //
