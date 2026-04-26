@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+//
+// =========================
+// 🔐 SHOPIFY SESSION
+// =========================
+//
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  refreshToken  String?
+  refreshTokenExpires DateTime?
+}
+
+//
+// =========================
+// 👇 AFFILIATE CORE MODEL
+// =========================
+//
+
+model Affiliate {
+  id             String   @id @default(cuid())
+
+  // referral code (?ref=XXX)
+  code           String   @unique
+
+  // commission %
+  commissionRate Float
+
+  isActive       Boolean  @default(true)
+
+  name           String?
+
+  clicks         Click[]
+  conversions    Conversion[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+//
+// =========================
+// 📊 CLICK TRACKING
+// =========================
+//
+
+model Click {
+  id            String   @id @default(cuid())
+
+  affiliateId   String
+  affiliate     Affiliate @relation(fields: [affiliateId], references: [id])
+
+  refCode       String
+
+  shop          String?
+  ip            String?
+  userAgent     String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([affiliateId])
+  @@index([refCode])
+}
+
+//
+// =========================
+// 💰 CONVERSIONS / SALES
+// =========================
+//
+
+model Conversion {
+  id                  String   @id @default(cuid())
+
+  orderId             String   @unique
+  shop                String
+
+  affiliateId         String?
+  affiliate           Affiliate? @relation(fields: [affiliateId], references: [id])
+
+  // Shopify order data
+  totalAmount         Float
+  currency            String   @default("USD")
+  email               String?
+
+  // revenue split (CORE DEL EXAMEN)
+  commissionApp       Float
+  commissionAffiliate Float
+
+  // tracking helper
+  refCode             String?
+
+  createdAt           DateTime @default(now())
+
+  @@index([affiliateId])
+  @@index([orderId])
+  @@index([refCode])
+}
+
+//
+// =========================
+// 🧠 REFERRAL SESSION (debug / attribution)
+// =========================
+//
+
+model ReferralSession {
+  id           String   @id @default(cuid())
+
+  refCode      String
+
+  shop         String?
+  sessionId    String?
+
+  landedAt     DateTime @default(now())
+
+  @@index([refCode])
+}
