@@ -1,2 +1,6 @@
-type = "web_app"
-name = "affiliate-engine"
+type = "backend"
+port = 3000
+
+[commands]
+dev = "npm run vite --prefix ."
+build = "npm run build --prefix ."
