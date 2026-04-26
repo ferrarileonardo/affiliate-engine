@@ -1,5 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import prisma from "~/db.server";
+import { createUsageCharge } from "~/services/billing.service";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -74,6 +75,26 @@ export async function action({ request }: ActionFunctionArgs) {
         currency: currency ?? "USD",
       },
     });
+
+    // Fire-and-forget: create the Shopify UsageRecord for the 5% app fee.
+    // We don't await this so the pixel response isn't blocked by the
+    // Shopify Admin API latency. billingChargeId is updated once resolved.
+    createUsageCharge({
+      shop: String(shop),
+      appFee,
+      orderId: String(orderId),
+    })
+      .then((chargeId) => {
+        if (chargeId) {
+          return prisma.conversion.update({
+            where: { id: conversion.id },
+            data: { billingChargeId: chargeId },
+          });
+        }
+      })
+      .catch((err) =>
+        console.error(`[conversion] billing update failed for ${orderId}:`, err),
+      );
 
     return Response.json(
       { ok: true, conversionId: conversion.id },
