@@ -6,8 +6,6 @@ import {
   ScrollRestoration,
 } from "react-router";
 
-import { AppProvider } from "@shopify/shopify-app-react-router/react";
-
 export default function App() {
   return (
     <html lang="en">
@@ -15,7 +13,6 @@ export default function App() {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-        {/* Shopify fonts */}
         <link rel="preconnect" href="https://cdn.shopify.com/" />
         <link
           rel="stylesheet"
@@ -27,11 +24,7 @@ export default function App() {
       </head>
 
       <body>
-        {/* 🔥 ESTE ES EL FIX */}
-        <AppProvider>
-          <Outlet />
-        </AppProvider>
-
+        <Outlet />
         <ScrollRestoration />
         <Scripts />
       </body>

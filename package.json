@@ -76,5 +76,8 @@
   "overrides": {
     "p-map": "^4.0.0"
   },
-  "author": "Personal"
+  "author": "Personal",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
 }
