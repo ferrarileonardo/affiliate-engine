@@ -1,0 +1,15 @@
+{
+  "name": "affiliate-pixel",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@shopify/web-pixels-extension": "^2.18.0"
+  },
+  "description": "Web pixel app extensions provide developers with a simplified process for managing and processing behavioral data, by loading pixels in a secure sandbox environment with APIs for subscribing to customer events. Web pixel app extensions provide the following benefits to app users and developers:",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": ""
+}

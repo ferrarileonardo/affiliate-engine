@@ -1,0 +1,12 @@
+name = "affiliate-pixel-v2"
+type = "web_pixel_extension"
+runtime_context = "strict"
+uid = "e7cb9358-c9eb-1aae-0869-7de9cdae995d1a48c9c9"
+
+[settings]
+type = "object"
+
+[settings.fields.accountID]
+name = "App URL"
+description = "Base URL of the affiliate app (e.g. https://your-app-url.trycloudflare.com)"
+type = "single_line_text_field"
