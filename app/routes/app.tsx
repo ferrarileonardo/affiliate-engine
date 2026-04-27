@@ -1,31 +1,54 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, useLoaderData, useRouteError, Link } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate, AFFILIATE_PLAN } from "../shopify.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { billing } = await authenticate.admin(request);
+const WEB_PIXELS_QUERY = `#graphql
+  query {
+    webPixels(first: 1) {
+      edges { node { id } }
+    }
+  }
+`;
 
-  // Check if the merchant has an active usage-based subscription.
-  // billing.request() throws a redirect to Shopify's billing confirmation
-  // page — the merchant approves once, then returns to the app.
+const WEB_PIXEL_CREATE = `#graphql
+  mutation webPixelCreate($input: WebPixelInput!) {
+    webPixelCreate(pixel: $input) {
+      webPixel { id }
+      userErrors { field message }
+    }
+  }
+`;
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { billing, admin } = await authenticate.admin(request);
+
   const { hasActivePayment } = await billing.check({
     plans: [AFFILIATE_PLAN],
     isTest: process.env.NODE_ENV !== "production",
   });
 
   if (!hasActivePayment) {
-    await billing.request({
+    return billing.request({
       plan: AFFILIATE_PLAN,
       isTest: process.env.NODE_ENV !== "production",
       returnUrl: `${process.env.SHOPIFY_APP_URL}/app`,
     });
   }
 
-  // eslint-disable-next-line no-undef
-  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  const pixelRes = await admin.graphql(WEB_PIXELS_QUERY);
+  const pixelData = await pixelRes.json();
+  const existingPixels = pixelData?.data?.webPixels?.edges ?? [];
+
+  if (existingPixels.length === 0) {
+    await admin.graphql(WEB_PIXEL_CREATE, {
+      variables: { input: { settings: "{}" } },
+    });
+  }
+
+  return { apiKey: process.env.SHOPIFY_API_KEY! };
 };
 
 export default function App() {
@@ -33,9 +56,9 @@ export default function App() {
 
   return (
     <AppProvider embedded apiKey={apiKey}>
-      <s-app-nav>
-        <s-link href="/app">Dashboard</s-link>
-      </s-app-nav>
+      <nav style={{ padding: "1rem" }}>
+        <Link to="/app">Dashboard</Link>
+      </nav>
       <Outlet />
     </AppProvider>
   );
