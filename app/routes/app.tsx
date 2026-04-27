@@ -5,25 +5,9 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate, AFFILIATE_PLAN } from "../shopify.server";
 
-const WEB_PIXELS_QUERY = `#graphql
-  query {
-    webPixels(first: 1) {
-      edges { node { id } }
-    }
-  }
-`;
-
-const WEB_PIXEL_CREATE = `#graphql
-  mutation webPixelCreate($input: WebPixelInput!) {
-    webPixelCreate(pixel: $input) {
-      webPixel { id }
-      userErrors { field message }
-    }
-  }
-`;
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { billing, admin } = await authenticate.admin(request);
+  // Volvemos a la versión correcta: solo billing
+  const { billing } = await authenticate.admin(request);
 
   const { hasActivePayment } = await billing.check({
     plans: [AFFILIATE_PLAN],
@@ -35,16 +19,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       plan: AFFILIATE_PLAN,
       isTest: process.env.NODE_ENV !== "production",
       returnUrl: `${process.env.SHOPIFY_APP_URL}/app`,
-    });
-  }
-
-  const pixelRes = await admin.graphql(WEB_PIXELS_QUERY);
-  const pixelData = await pixelRes.json();
-  const existingPixels = pixelData?.data?.webPixels?.edges ?? [];
-
-  if (existingPixels.length === 0) {
-    await admin.graphql(WEB_PIXEL_CREATE, {
-      variables: { input: { settings: "{}" } },
     });
   }
 
