@@ -1,23 +1,36 @@
 import { register } from "@shopify/web-pixels-extension";
 
 register(({ analytics, browser, init }) => {
-  const shopDomain: string = (init.data as any)?.shop?.myshopifyDomain ?? "";
+  const data = init.data as unknown as {
+    shop?: { myshopifyDomain?: string };
+    pixelSettings?: { accountID?: string };
+    settings?: { accountID?: string };
+  };
 
-  // App base URL configured in pixel settings (accountID field = App URL)
-  const appUrl: string =
-    (init.data as any)?.pixelSettings?.accountID ??
-    (init.data as any)?.settings?.accountID ??
+  const shopDomain = data?.shop?.myshopifyDomain ?? "";
+
+  const appUrl =
+    data?.pixelSettings?.accountID ??
+    data?.settings?.accountID ??
     "";
 
   const COOKIE_NAME = "affiliate_ref";
   const CLICK_SENT_KEY = "affiliate_click_sent";
 
-  // Capture ?ref= from URL on every page view and persist to storage
-  analytics.subscribe("page_viewed", async (event) => {
+  // PAGE VIEWED
+  analytics.subscribe("page_viewed", async (event: unknown) => {
     try {
-      const href: string =
-        (event.context as any)?.window?.location?.href ??
-        (event.context as any)?.document?.location?.href ??
+      const e = event as {
+        context?: {
+          window?: { location?: { href?: string } };
+          document?: { location?: { href?: string } };
+          navigator?: { userAgent?: string };
+        };
+      };
+
+      const href =
+        e.context?.window?.location?.href ??
+        e.context?.document?.location?.href ??
         "";
 
       if (!href) return;
@@ -28,17 +41,16 @@ register(({ analytics, browser, init }) => {
       if (ref) {
         const normalizedRef = ref.trim().toUpperCase();
 
-        // Persist ref in cookie (30 days) and sessionStorage
-        const expires = new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000,
-        ).toUTCString();
+        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+
         await browser.cookie.set(
           `${COOKIE_NAME}=${normalizedRef}; expires=${expires}; path=/; SameSite=None; Secure`,
         );
+
         await browser.sessionStorage.setItem(COOKIE_NAME, normalizedRef);
 
-        // Track click once per session to avoid duplicates
         const clickSent = await browser.sessionStorage.getItem(CLICK_SENT_KEY);
+
         if (!clickSent && appUrl) {
           await browser.sessionStorage.setItem(CLICK_SENT_KEY, "1");
 
@@ -48,14 +60,14 @@ register(({ analytics, browser, init }) => {
             body: JSON.stringify({
               ref: normalizedRef,
               shop: shopDomain,
-              userAgent: (event.context as any)?.navigator?.userAgent ?? "",
+              userAgent: e.context?.navigator?.userAgent ?? "",
             }),
           }).catch(() => {});
         }
       } else {
-        // Sync cookie → sessionStorage for pages that don't have ?ref=
         const cookie = await browser.cookie.get(COOKIE_NAME);
         const session = await browser.sessionStorage.getItem(COOKIE_NAME);
+
         if (cookie && !session) {
           await browser.sessionStorage.setItem(COOKIE_NAME, cookie);
         }
@@ -65,22 +77,30 @@ register(({ analytics, browser, init }) => {
     }
   });
 
-  // Track checkout completion and record the conversion
-  analytics.subscribe("checkout_completed", async (event) => {
+  // CHECKOUT COMPLETED
+  analytics.subscribe("checkout_completed", async (event: unknown) => {
     try {
-      // Read ref from sessionStorage first, fall back to cookie
+      const e = event as {
+        data?: {
+          checkout?: {
+            order?: { id?: string };
+            totalPrice?: { amount?: string; currencyCode?: string };
+          };
+        };
+      };
+
       const ref =
         (await browser.sessionStorage.getItem(COOKIE_NAME)) ??
         (await browser.cookie.get(COOKIE_NAME));
 
       if (!ref || !appUrl) return;
 
-      const checkout = (event.data as any)?.checkout;
+      const checkout = e.data?.checkout;
       if (!checkout) return;
 
-      const orderId: string = checkout?.order?.id ?? "";
-      const totalPrice: string = checkout?.totalPrice?.amount ?? "0";
-      const currency: string = checkout?.totalPrice?.currencyCode ?? "USD";
+      const orderId = checkout.order?.id ?? "";
+      const totalPrice = checkout.totalPrice?.amount ?? "0";
+      const currency = checkout.totalPrice?.currencyCode ?? "USD";
 
       if (!orderId) return;
 
