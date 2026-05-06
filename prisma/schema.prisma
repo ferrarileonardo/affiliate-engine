@@ -66,10 +66,10 @@ model Affiliate {
 //
 
 model Click {
-  id            String   @id @default(cuid())
+  id            String     @id @default(cuid())
 
-  affiliateId   String
-  affiliate     Affiliate @relation(fields: [affiliateId], references: [id])
+  affiliateId   String?
+  affiliate     Affiliate? @relation(fields: [affiliateId], references: [id])
 
   refCode       String
 
@@ -82,6 +82,8 @@ model Click {
   @@index([affiliateId])
   @@index([refCode])
 }
+  
+
 
 //
 // =========================
@@ -91,34 +93,20 @@ model Click {
 
 model Conversion {
   id                  String   @id @default(cuid())
-
   orderId             String   @unique
   shop                String
-
   affiliateId         String?
   affiliate           Affiliate? @relation(fields: [affiliateId], references: [id])
-
-  // Shopify order data
   totalAmount         Float
   currency            String   @default("USD")
   email               String?
-
-  // revenue split (CORE DEL EXAMEN)
   commissionApp       Float
   commissionAffiliate Float
-
-  // tracking helper
   refCode             String?
-
-  // billing — Shopify AppUsageRecord ID (null = pending or failed)
   billingChargeId     String?
-
   createdAt           DateTime @default(now())
-
-  @@index([affiliateId])
-  @@index([orderId])
-  @@index([refCode])
 }
+
 
 //
 // =========================

@@ -11,6 +11,59 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { createAffiliate, updateAffiliate } from "~/services/affiliate.service";
 import prisma from "~/db.server";
 
+
+function TestUsageButton() {
+  const [result, setResult] = useState("");
+
+  async function testUsage() {
+    try {
+      const res = await fetch("/apps/affiliate-engine/api/usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: "TEST-123",
+        }),
+      });
+
+      const text = await res.text();
+      setResult(text);
+    } catch (err) {
+      setResult("Error: " + (err instanceof Error ? err.message : String(err)));
+    }
+  }
+
+  return (
+    <div style={{ marginTop: "20px" }}>
+      <button
+        onClick={testUsage}
+        style={{
+          padding: "10px 16px",
+          background: "#000",
+          color: "#fff",
+          borderRadius: "6px",
+          cursor: "pointer",
+        }}
+      >
+        Test /api/usage
+      </button>
+
+      {result && (
+        <pre
+          style={{
+            marginTop: "20px",
+            padding: "12px",
+            background: "#f4f4f4",
+            borderRadius: "6px",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {result}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 // ─── Loader ───────────────────────────────────────────────────────────────────
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -186,6 +239,8 @@ export default function Index() {
 
       {/* ── Stats Overview ── */}
       <s-section heading="Overview">
+        <TestUsageButton />
+
         <div
           style={{
             display: "grid",
@@ -231,62 +286,71 @@ export default function Index() {
             }}
           >
             <div style={{ flex: "1", minWidth: "140px" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontWeight: "500",
-                  fontSize: "13px",
-                }}
-              >
-                Affiliate Code *
-              </label>
-              <input
-                name="code"
-                placeholder="e.g. JOHN2026"
-                required
-                style={input}
-              />
-            </div>
-            <div style={{ flex: "1", minWidth: "140px" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontWeight: "500",
-                  fontSize: "13px",
-                }}
-              >
-                Name
-              </label>
-              <input
-                name="name"
-                placeholder="Affiliate name"
-                style={input}
-              />
-            </div>
-            <div style={{ width: "160px" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontWeight: "500",
-                  fontSize: "13px",
-                }}
-              >
-                Commission Rate (%) *
-              </label>
-              <input
-                name="commissionRate"
-                type="number"
-                min="1"
-                max="100"
-                step="0.5"
-                placeholder="e.g. 15"
-                required
-                style={input}
-              />
-            </div>
+  <label
+    htmlFor="affiliate-code"
+    style={{
+      display: "block",
+      marginBottom: "6px",
+      fontWeight: "500",
+      fontSize: "13px",
+    }}
+  >
+    Affiliate Code *
+  </label>
+  <input
+    id="affiliate-code"
+    name="code"
+    placeholder="e.g. JOHN2026"
+    required
+    style={input}
+  />
+</div>
+
+<div style={{ flex: "1", minWidth: "140px" }}>
+  <label
+    htmlFor="affiliate-name"
+    style={{
+      display: "block",
+      marginBottom: "6px",
+      fontWeight: "500",
+      fontSize: "13px",
+    }}
+  >
+    Name
+  </label>
+  <input
+    id="affiliate-name"
+    name="name"
+    placeholder="Affiliate name"
+    style={input}
+  />
+</div>
+
+<div style={{ width: "160px" }}>
+  <label
+    htmlFor="commission-rate"
+    style={{
+      display: "block",
+      marginBottom: "6px",
+      fontWeight: "500",
+      fontSize: "13px",
+    }}
+  >
+    Commission Rate (%) *
+  </label>
+  <input
+    id="commission-rate"
+    name="commissionRate"
+    type="number"
+    min="1"
+    max="100"
+    step="0.5"
+    placeholder="e.g. 15"
+    required
+    style={input}
+  />
+</div>
+
             <div>
               <s-button type="submit" loading={isCreating}>
                 Create Affiliate

@@ -4,10 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 const isTest = !!process.env.VITEST;
 
-// Related: https://github.com/remix-run/remix/issues/2835#issuecomment-1144102176
-// Replace the HOST env var with SHOPIFY_APP_URL so that it doesn't break the Vite server.
-// The CLI will eventually stop passing in HOST,
-// so we can remove this workaround after the next major release.
+// Fix HOST override for Shopify CLI
 if (
   process.env.HOST &&
   (!process.env.SHOPIFY_APP_URL ||
@@ -17,27 +14,16 @@ if (
   delete process.env.HOST;
 }
 
-const host = new URL(process.env.SHOPIFY_APP_URL || "http://localhost")
-  .hostname;
+const host = new URL(process.env.SHOPIFY_APP_URL || "http://localhost").hostname;
 
-let hmrConfig;
-if (host === "localhost") {
-  hmrConfig = {
-    protocol: "ws",
-    host: "localhost",
-    port: 64999,
-    clientPort: 64999,
-    timeout: 120000,
-  };
-} else {
-  hmrConfig = {
-    protocol: "wss",
-    host: host,
-    port: parseInt(process.env.FRONTEND_PORT!) || 8002,
-    clientPort: 443,
-    timeout: 120000,
-  };
-}
+// 🔥 FORZAMOS IPv4 SIEMPRE (solución definitiva)
+const hmrConfig = {
+  protocol: "ws",
+  host: "127.0.0.1",
+  port: 64999,
+  clientPort: 64999,
+  timeout: 120000,
+};
 
 export default defineConfig({
   server: {
@@ -45,32 +31,29 @@ export default defineConfig({
     cors: {
       preflightContinue: true,
     },
-    port: Number(process.env.PORT || 3000),
+
+    // 🔥 CORRECCIÓN CRÍTICA PARA WINDOWS + CLOUDFLARE
+    port: 3000,
+    strictPort: true,
+    host: "127.0.0.1",
+
     hmr: hmrConfig,
+
     fs: {
-      // See https://vitejs.dev/config/server-options.html#server-fs-allow for more information
       allow: ["app", "node_modules"],
     },
   },
+
   plugins: [
     ...(isTest ? [] : [reactRouter()]),
     tsconfigPaths(),
   ],
+
   build: {
     assetsInlineLimit: 0,
   },
+
   optimizeDeps: {
     include: ["@shopify/app-bridge-react"],
-  },
-  test: {
-    globals: true,
-    environment: "node",
-    setupFiles: ["./app/test/setup.ts"],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "html"],
-      include: ["app/services/**/*.ts", "app/routes/api.*.ts"],
-      exclude: ["app/test/**"],
-    },
   },
 }) satisfies UserConfig;

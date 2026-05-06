@@ -2,7 +2,6 @@ import prisma from "../db.server";
 
 const SHOPIFY_API_VERSION = "2024-04";
 
-// Obtener accessToken desde tu tabla Session
 async function getAccessToken(shop: string): Promise<string | null> {
   const session = await prisma.session.findFirst({
     where: { shop },
@@ -11,7 +10,6 @@ async function getAccessToken(shop: string): Promise<string | null> {
   return session?.accessToken ?? null;
 }
 
-// Crear un UsageRecord directamente con fetch
 export async function createUsageChargeExpress(params: {
   shop: string;
   appFee: number;
@@ -27,7 +25,6 @@ export async function createUsageChargeExpress(params: {
     return null;
   }
 
-  // Obtener subscriptionLineItemId desde tu tabla AppBilling
   const billing = await prisma.appBilling.findUnique({
     where: { shop },
   });

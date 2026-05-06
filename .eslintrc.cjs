@@ -1,9 +1,3 @@
-/**
- * This is intended to be a basic starting point for linting in your app.
- * It relies on recommended configs out of the box for simplicity, but you can
- * and should modify this configuration to best suit your team's needs.
- */
-
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   root: true,
@@ -21,7 +15,6 @@ module.exports = {
   },
   ignorePatterns: ["!**/.server", "!**/.client"],
 
-  // Base config
   extends: ["eslint:recommended"],
 
   overrides: [
@@ -44,9 +37,6 @@ module.exports = {
           { name: "Link", linkAttribute: "to" },
           { name: "NavLink", linkAttribute: "to" },
         ],
-        "import/resolver": {
-          typescript: {},
-        },
       },
       rules: {
         "react/no-unknown-property": ["error", { ignore: ["variant"] }],
@@ -62,7 +52,8 @@ module.exports = {
         "import/internal-regex": "^~/",
         "import/resolver": {
           node: {
-            extensions: [".ts", ".tsx"],
+            extensions: [".js", ".ts", ".tsx"],
+            paths: ["./"], // ← ESTO ES LO QUE PERMITE ../app/services/*
           },
           typescript: {
             alwaysTryTypes: true,
@@ -90,7 +81,8 @@ module.exports = {
       },
     },
   ],
+
   globals: {
-    shopify: "readonly"
+    shopify: "readonly",
   },
 };

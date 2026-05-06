@@ -22,7 +22,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    // ⬅️ ESTA ES LA PARTE QUE FALTABA
     const { session } = await authenticate.admin(request);
     const shop = session.shop;
 
